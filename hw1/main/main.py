@@ -174,30 +174,37 @@ def plot_all_learning_curves() -> None:
     
 
 
-# Graphing function
-def graph_results(x, y, title, xlabel, ylabel, color='blue', linestyle='-', marker='o', save_path=None):
+# # Graphing function
+# def graph_results(x, y, title, xlabel, ylabel, color='blue', linestyle='-', marker='o', save_path=None):
     
-    plt.figure(figsize=(8, 6))  # Set figure size for better readability
-    plt.plot(x, y, color=color, linestyle=linestyle, marker=marker, label=ylabel)
-    plt.title(title, fontsize=14)
-    plt.xlabel(xlabel, fontsize=12)
-    plt.ylabel(ylabel, fontsize=12)
-    plt.grid(True)  # Add gridlines
-    plt.legend()  # Add legend for the y-axis label
-    plt.tight_layout()  # Adjust layout so that everything fits nicely
+#     plt.figure(figsize=(8, 6))  # Set figure size for better readability
+#     plt.plot(x, y, color=color, linestyle=linestyle, marker=marker, label=ylabel)
+#     plt.title(title, fontsize=14)
+#     plt.xlabel(xlabel, fontsize=12)
+#     plt.ylabel(ylabel, fontsize=12)
+#     plt.grid(True)  # Add gridlines
+#     plt.legend()  # Add legend for the y-axis label
+#     plt.tight_layout()  # Adjust layout so that everything fits nicely
     
-    # Save the graph to the current directory if save_path is provided
-    if save_path:
-        if not os.path.isabs(save_path):
-            save_path = os.path.join(os.getcwd(), save_path)  # Save to current working directory
-        plt.savefig(save_path)
+#     # Save the graph to the current directory if save_path is provided
+#     if save_path:
+#         if not os.path.isabs(save_path):
+#             save_path = os.path.join(os.getcwd(), save_path)  # Save to current working directory
+#         plt.savefig(save_path)
     
-    plt.show()  # Display the graph
+#     plt.show()  # Display the graph
 
 
-def run_and_plot_multi(algorithm_name: str, run_function: callable, num_iterations: int, file_prefix: str) -> None:
+def run_and_plot_multi(algorithm_name: str, update_function: callable, num_iterations: int, file_prefix: str) -> None:
+    """
+    General function to run and plot results for multi-class algorithms (Perceptron, PA).
     
-    results = run_function(iteration=num_iterations)
+    :param algorithm_name: Name of the algorithm (e.g., "Perceptron", "PA").
+    :param update_function: Update function (e.g., perceptron or PA update).
+    :param num_iterations: Number of iterations to run.
+    :param file_prefix: Prefix for saving plots.
+    """
+    results = run_multi_algorithm(iteration=num_iterations, update_fn=update_function, dataset_type='train', num_classes=10)
     
     # Extract accuracies
     training_accuracy = results[2]
@@ -222,6 +229,7 @@ def run_and_plot_multi(algorithm_name: str, run_function: callable, num_iteratio
         ylabel="Accuracy",
         save_path=f"{file_prefix}_testing_accuracy.png"
     )
+
 
 
 def plot_multi_algorithm_mistakes() -> None:
@@ -262,18 +270,17 @@ def plot_multi_algorithm_accuracies() -> None:
 
     run_and_plot_multi(
         algorithm_name="Multi-class Perceptron",
-        run_function=run_perceptron,
+        update_function=update_multi_weights_perceptron,  # Updated function name
         num_iterations=20,
         file_prefix="multi_perceptron"
     )
 
     run_and_plot_multi(
         algorithm_name="Multi-class PA",
-        run_function=run_passive_aggressive,
+        update_function=update_multi_weights_pa,  # Updated function name
         num_iterations=20,
         file_prefix="multi_pa"
     )
-
 
 def plot_multi_learning_curve(algorithm_name: str, increment_function: callable, num_iterations: int, size: int, file_prefix: str) -> None:
     
@@ -317,9 +324,9 @@ def plot_all_multi_learning_curves() -> None:
 
 def main():
     
-    # Run the learning curves for all binary classifiers
-    print("Running all binary learning curves...")
-    plot_all_learning_curves()
+    # # Run the learning curves for all binary classifiers
+    # print("Running all binary learning curves...")
+    # plot_all_learning_curves()
     
     
     # Run the multi-class algorithm accuracy plots

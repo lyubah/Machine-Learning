@@ -20,12 +20,7 @@ def load_data(dataset_type='train', num_classes=10):
 
     return x_data, y_data
 
-# Weight-vector representation for multi-class classification
-def get_weight_vector(x, y, num_classes=10):
-    vector = np.zeros(len(x) * num_classes)
-    for i in range(len(x)):
-        vector[len(x) * y + i] = x[i]
-    return vector
+
 
 # Evaluation function for multi-class classification
 def evaluate(weights, num_classes=10):
@@ -42,64 +37,70 @@ def evaluate(weights, num_classes=10):
 
     return correct / total
 
-# Multi-class Perceptron algorithm
-def run_perceptron(iteration, num_classes=10, kind='train'):
+
+
+
+# Weight-vector representation for multi-class classification
+def get_weight_vector(x, y, num_classes=10):
+    vector = np.zeros(len(x) * num_classes)
+    for i in range(len(x)):
+        vector[len(x) * y + i] = x[i]
+    return vector
+
+
+def run_multi_algorithm(iteration, update_fn, dataset_type="train", num_classes=10):
+    """
+    General multi-class algorithm runner for Perceptron and PA algorithms.
+    Final weights, mistake list, train accuracy list, test accuracy list.
     
-    x_train, y_train = load_data(kind, num_classes)
-    weight_vector = np.zeros(len(x_train[0]) * num_classes)
+    :param iteration: Number of iterations.
+    :param update_fn: The update function (Perceptron or PA).
+    :param dataset_type: Type of the dataset ('train' or 'test').
+    :param num_classes: Number of classes for multi-class classification.
+    :return: Final weights, mistake list, train accuracy list, test accuracy list.
+    """
+    # Load the dataset
+    x_train, y_train = load_data(dataset_type, num_classes)
+
+    # Initialize weights for multi-class classification
+    weights = np.zeros(len(x_train[0]) * num_classes)
+    
+    # Lists to track mistakes and accuracy over iterations
     mistake_list = []
     train_accuracy_list = []
     test_accuracy_list = []
-    
+
     for i in range(iteration):
-        mistake = 0
-        correct = 0
+        mistake, correct = 0, 0
+        
+        # Iterate through each sample
         for j in range(len(x_train)):
-            all_scores = [np.dot(weight_vector, get_weight_vector(x_train[j], k, num_classes)) for k in range(num_classes)]
-            y_pred = np.argmax(all_scores)
+            # Compute scores for each class
+            all_scores = [np.dot(weights, get_weight_vector(x_train[j], k, num_classes)) for k in range(num_classes)]
+            y_pred = np.argmax(all_scores)  # Get the predicted label
+
+            # If the prediction is incorrect
             if y_pred != y_train[j]:
                 mistake += 1
-                weight_vector = update_weights_perceptron(weight_vector, x_train[j], y_train[j], y_pred, num_classes)
+                weights = update_fn(weights, x_train[j], y_train[j], y_pred, num_classes)
             else:
                 correct += 1
+
+        # Track mistakes and accuracies after each iteration
         mistake_list.append(mistake)
         train_accuracy_list.append(correct / len(x_train))
-        test_accuracy_list.append(evaluate(weight_vector, num_classes))
+        test_accuracy_list.append(evaluate(weights, num_classes))
 
-    return weight_vector, mistake_list, train_accuracy_list, test_accuracy_list
+    return weights, mistake_list, train_accuracy_list, test_accuracy_list
+
 
 # Update weights for Perceptron
-def update_weights_perceptron(weight_vector, xt, yt, y_pred, num_classes=10):
+def update_multi_weights_perceptron(weight_vector, xt, yt, y_pred, num_classes=10):
     return weight_vector + get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes)
 
-# Multi-class Passive-Aggressive algorithm
-def run_passive_aggressive(iteration, num_classes=10, kind='train'):
-    
-    x_train, y_train = load_data(kind, num_classes)
-    weight_vector = np.zeros(len(x_train[0]) * num_classes)
-    mistake_list = []
-    train_accuracy_list = []
-    test_accuracy_list = []
-    
-    for i in range(iteration):
-        mistake = 0
-        correct = 0
-        for j in range(len(x_train)):
-            all_scores = [np.dot(weight_vector, get_weight_vector(x_train[j], k, num_classes)) for k in range(num_classes)]
-            y_pred = np.argmax(all_scores)
-            if y_pred != y_train[j]:
-                mistake += 1
-                weight_vector = update_weights_pa(weight_vector, x_train[j], y_train[j], y_pred, num_classes)
-            else:
-                correct += 1
-        mistake_list.append(mistake)
-        train_accuracy_list.append(correct / len(x_train))
-        test_accuracy_list.append(evaluate(weight_vector, num_classes))
-
-    return weight_vector, mistake_list, train_accuracy_list, test_accuracy_list
 
 # Update weights for Passive-Aggressive algorithm
-def update_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10):
+def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10):
     learning_rate = (1 - (np.dot(weight_vector, get_weight_vector(xt, yt, num_classes)) - np.dot(weight_vector, get_weight_vector(xt, y_pred, num_classes)))) \
                     / np.linalg.norm(get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes))
     return weight_vector + learning_rate * (get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes))
