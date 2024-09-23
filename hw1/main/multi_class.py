@@ -105,6 +105,34 @@ def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10):
                     / np.linalg.norm(get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes))
     return weight_vector + learning_rate * (get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes))
 
+
+
+# Multi-class Perceptron
+def run_multi_perceptron(iteration, dataset_type="train", num_classes=10):
+    """
+    Run the multi-class Perceptron algorithm.
+    
+    :param iteration: Number of iterations.
+    :param dataset_type: Type of the dataset ('train' or 'test').
+    :param num_classes: Number of classes for multi-class classification.
+    :return: Final weights, mistake list, train accuracy list, test accuracy list.
+    """
+    return run_multi_algorithm(iteration, update_multi_weights_perceptron, dataset_type, num_classes)
+
+
+# Multi-class Passive-Aggressive Algorithm
+def run_multi_passive_aggressive(iteration, dataset_type="train", num_classes=10):
+    """
+    Run the multi-class Passive-Aggressive algorithm.
+    
+    :param iteration: Number of iterations.
+    :param dataset_type: Type of the dataset ('train' or 'test').
+    :param num_classes: Number of classes for multi-class classification.
+    :return: Final weights, mistake list, train accuracy list, test accuracy list.
+    """
+    return run_multi_algorithm(iteration, update_multi_weights_pa, dataset_type, num_classes)
+
+
 # Incremental run for Perceptron and Passive-Aggressive algorithms
 def increment_run(iteration, size, update_fn, num_classes=10):
     
