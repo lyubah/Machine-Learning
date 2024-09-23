@@ -12,7 +12,7 @@ import torch
 import numpy as np
 
 
-data_dir = '/Users/Lerberber/Desktop/ML-CPT-570/hw1/data'
+data_dir = '../data'
 
 def load_data(dataset_type ='train', mode='binary'):
    

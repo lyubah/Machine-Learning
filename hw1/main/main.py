@@ -366,16 +366,16 @@ def plot_multi_algorithm_mistakes() -> None:
     """
 
     # Run multi-class Perceptron and plot mistakes
-    perc = run_multi_perceptron(iteration=50)  # Use multi-class Perceptron function
-    mistakes = perc[1]
-    graph_results(
-        x=range(1, 51),
-        y=mistakes,
-        title="Multi-class Perceptron Mistakes",
-        xlabel="Iteration",
-        ylabel="Mistakes",
-        save_path="multi_perceptron_mistakes.png"
-    )
+    # perc = run_multi_perceptron(iteration=50)  # Use multi-class Perceptron function
+    # mistakes = perc[1]
+    # graph_results(
+    #     x=range(1, 51),
+    #     y=mistakes,
+    #     title="Multi-class Perceptron Mistakes",
+    #     xlabel="Iteration",
+    #     ylabel="Mistakes",
+    #     save_path="multi_perceptron_mistakes.png"
+    # )
 
     # Run multi-class Passive-Aggressive algorithm and plot mistakes
     PA = run_multi_passive_aggressive(iteration=50)  # Use multi-class PA function
@@ -396,12 +396,12 @@ def plot_multi_algorithm_accuracies() -> None:
     on training and testing datasets.
     """
 
-    run_and_plot_multi(
-        algorithm_name="Multi-class Perceptron",
-        update_function=update_multi_weights_perceptron,  # Use multi-class Perceptron update
-        num_iterations=20,
-        file_prefix="multi_perceptron"
-    )
+    # run_and_plot_multi(
+    #     algorithm_name="Multi-class Perceptron",
+    #     update_function=update_multi_weights_perceptron,  # Use multi-class Perceptron update
+    #     num_iterations=20,
+    #     file_prefix="multi_perceptron"
+    # )
 
     run_and_plot_multi(
         algorithm_name="Multi-class PA",

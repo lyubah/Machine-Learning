@@ -2,7 +2,8 @@ import numpy as np
 import os
 
 # Define the path to your data
-data_dir = '/Users/Lerberber/Desktop/ML-CPT-570/hw1/data'
+data_dir = '../data'
+
 
 # Load data function for multi-class classification
 def load_data(dataset_type='train', num_classes=10):
@@ -101,9 +102,14 @@ def update_multi_weights_perceptron(weight_vector, xt, yt, y_pred, num_classes=1
 
 # Update weights for Passive-Aggressive algorithm
 def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10):
-    learning_rate = (1 - (np.dot(weight_vector, get_weight_vector(xt, yt, num_classes)) - np.dot(weight_vector, get_weight_vector(xt, y_pred, num_classes)))) \
-                    / np.linalg.norm(get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes))
-    return weight_vector + learning_rate * (get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes))
+    difference = get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes)
+    norm = np.linalg.norm(difference)
+    
+    if norm == 0:
+        return weight_vector  # No update if norm is zero
+    
+    learning_rate = (1 - (np.dot(weight_vector, get_weight_vector(xt, yt, num_classes)) - np.dot(weight_vector, get_weight_vector(xt, y_pred, num_classes)))) / norm
+    return weight_vector + learning_rate * difference
 
 
 
