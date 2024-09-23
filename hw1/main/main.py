@@ -411,9 +411,9 @@ def plot_multi_algorithm_accuracies() -> None:
     )
 
 # Plot multi-class learning curves (Perceptron and PA)
-def plot_multi_learning_curve(algorithm_name: str, increment_function: callable, num_iterations: int, size: int, file_prefix: str) -> None:
+def plot_multi_learning_curve(algorithm_name: str, increment_function: callable, update_fn: callable, num_iterations: int, size: int, file_prefix: str) -> None:
     
-    results = increment_function(iteration=num_iterations, size=size)
+    results = increment_function(iteration=num_iterations, size=size, update_fn=update_fn)
     
     # Extract data sizes and test accuracies
     data_size = results[1]
@@ -435,7 +435,8 @@ def plot_all_multi_learning_curves() -> None:
     # Plot multi-class Perceptron learning curve
     plot_multi_learning_curve(
         algorithm_name="Multi-class Perceptron",
-        increment_function=increment_run,
+        increment_function=multi_increment_run,
+        update_fn=update_multi_weights_perceptron,  # Use Perceptron update function
         num_iterations=20,
         size=100,
         file_prefix="multi_perceptron"
@@ -444,16 +445,16 @@ def plot_all_multi_learning_curves() -> None:
     # Plot multi-class Passive-Aggressive learning curve
     plot_multi_learning_curve(
         algorithm_name="Multi-class PA",
-        increment_function=increment_run,
+        increment_function=multi_increment_run,
+        update_fn=update_multi_weights_pa,  # Use PA update function
         num_iterations=20,
         size=100,
         file_prefix="multi_pa"
     )
 
-
 def main():
     
-    # # Run the learning curves for all binary classifiers
+    # Run the learning curves for all binary classifiers
     # print("Running all binary learning curves...")
     # plot_all_learning_curves()
     

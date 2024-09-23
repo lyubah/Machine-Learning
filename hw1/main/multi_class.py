@@ -134,22 +134,32 @@ def run_multi_passive_aggressive(iteration, dataset_type="train", num_classes=10
 
 
 # Incremental run for Perceptron and Passive-Aggressive algorithms
-def increment_run(iteration, size, update_fn, num_classes=10):
-    
+def multi_increment_run(iteration, size, update_fn, num_classes=10):
+    # Load the dataset
     x_train, y_train = load_data("train", num_classes)
+    
+    # Initialize weights for multi-class classification
     weight_vector = np.zeros(len(x_train[0]) * num_classes)
+    
+    # Lists to track data size and test accuracy
     data_size = []
     test_accuracy_list = []
     
     for i in range(iteration):
+        print(f"Iteration: {i}")
         for j in range(len(x_train)):
+            # Compute scores for each class
             all_scores = [np.dot(weight_vector, get_weight_vector(x_train[j], k, num_classes)) for k in range(num_classes)]
-            y_pred = np.argmax(all_scores)
+            y_pred = np.argmax(all_scores)  # Get the predicted label
+            
+            # If the prediction is incorrect, update weights
             if y_pred != y_train[j]:
                 weight_vector = update_fn(weight_vector, x_train[j], y_train[j], y_pred, num_classes)
             
+            # Every 'size' number of samples, track the test accuracy
             if (j + 1) % size == 0:
                 test_accuracy_list.append(evaluate(weight_vector, num_classes))
                 data_size.append((i + 1) * (j + 1))
     
     return weight_vector, data_size, test_accuracy_list
+
