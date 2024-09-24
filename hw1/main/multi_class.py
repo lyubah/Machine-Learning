@@ -100,16 +100,19 @@ def update_multi_weights_perceptron(weight_vector, xt, yt, y_pred, num_classes=1
     return weight_vector + get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes)
 
 
-# Update weights for Passive-Aggressive algorithm
-def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10):
-    difference = get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes)
-    norm = np.linalg.norm(difference)
-    
-    if norm == 0:
-        return weight_vector  # No update if norm is zero
-    
-    learning_rate = (1 - (np.dot(weight_vector, get_weight_vector(xt, yt, num_classes)) - np.dot(weight_vector, get_weight_vector(xt, y_pred, num_classes)))) / norm
-    return weight_vector + learning_rate * difference
+def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10, epsilon=1e-8):
+    print(y_pred)
+    # Adding epsilon to avoid division by zero or very small values
+    denom = np.linalg.norm(get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes)) + epsilon
+    learning_rate = (1 - (np.dot(weight_vector, get_weight_vector(xt, yt, num_classes)) - np.dot(weight_vector, get_weight_vector(xt, y_pred, num_classes)))) / denom
+
+    # Debugging output
+    if np.isnan(learning_rate) or np.isinf(learning_rate):
+        print(f"Warning: Invalid learning rate: {learning_rate}")
+        print(f"Weight vector: {weight_vector}, xt: {xt}, yt: {yt}, y_pred: {y_pred}")
+
+    return weight_vector + learning_rate * (get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes))
+
 
 
 

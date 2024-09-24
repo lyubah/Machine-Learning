@@ -365,7 +365,7 @@ def plot_multi_algorithm_mistakes() -> None:
     Plot mistakes for multi-class Perceptron and Passive-Aggressive algorithms.
     """
 
-    # Run multi-class Perceptron and plot mistakes
+    # # Run multi-class Perceptron and plot mistakes
     # perc = run_multi_perceptron(iteration=50)  # Use multi-class Perceptron function
     # mistakes = perc[1]
     # graph_results(
@@ -461,6 +461,7 @@ def main():
     # Run the multi-class algorithm mistakes plots
     print("Running multi-class algorithm mistakes plots...")
     plot_multi_algorithm_mistakes()
+    
     
     # Run the multi-class algorithm accuracy plots
     print("Running multi-class algorithm accuracy plots...")
