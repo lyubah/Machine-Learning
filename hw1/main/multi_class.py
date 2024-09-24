@@ -100,10 +100,8 @@ def update_multi_weights_perceptron(weight_vector, xt, yt, y_pred, num_classes=1
     return weight_vector + get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes)
 
 
-def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10, epsilon=1e-8):
-    print(y_pred)
-    # Adding epsilon to avoid division by zero or very small values
-    denom = np.linalg.norm(get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes)) + epsilon
+def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10):
+    denom = np.linalg.norm(get_weight_vector(xt, yt, num_classes) - get_weight_vector(xt, y_pred, num_classes)) + 1e-8
     learning_rate = (1 - (np.dot(weight_vector, get_weight_vector(xt, yt, num_classes)) - np.dot(weight_vector, get_weight_vector(xt, y_pred, num_classes)))) / denom
 
     # Debugging output
@@ -130,16 +128,16 @@ def run_multi_perceptron(iteration, dataset_type="train", num_classes=10):
 
 
 # Multi-class Passive-Aggressive Algorithm
-def run_multi_passive_aggressive(iteration, dataset_type="train", num_classes=10):
-    """
-    Run the multi-class Passive-Aggressive algorithm.
+# def run_multi_passive_aggressive(iteration, dataset_type="train", num_classes=10):
+#     """
+#     Run the multi-class Passive-Aggressive algorithm.
     
-    :param iteration: Number of iterations.
-    :param dataset_type: Type of the dataset ('train' or 'test').
-    :param num_classes: Number of classes for multi-class classification.
-    :return: Final weights, mistake list, train accuracy list, test accuracy list.
-    """
-    return run_multi_algorithm(iteration, update_multi_weights_pa, dataset_type, num_classes)
+#     :param iteration: Number of iterations.
+#     :param dataset_type: Type of the dataset ('train' or 'test').
+#     :param num_classes: Number of classes for multi-class classification.
+#     :return: Final weights, mistake list, train accuracy list, test accuracy list.
+#     """
+#     return run_multi_algorithm(iteration, update_multi_weights_pa, dataset_type, num_classes)
 
 
 # Incremental run for Perceptron and Passive-Aggressive algorithms

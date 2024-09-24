@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 from bin_classifiers import *
 from multi_class import * 
+from multi_PA import *
 
 # Graphing function
 def graph_results(x, y, title, xlabel, ylabel, color='blue', linestyle='-', marker='o', save_path=None):
@@ -232,34 +233,35 @@ def plot_all_learning_curves() -> None:
 
 
 
-# def plot_multi_algorithm_mistakes() -> None:
-#     """
-#     Plot mistakes for multi-class Perceptron and Passive-Aggressive algorithms.
-#     """
+def plot_multi_algorithm_mistakes() -> None:
+    """
+    Plot mistakes for multi-class Perceptron and Passive-Aggressive algorithms.
+    """
+    # Run multi-class Passive-Aggressive Algorithm
+    PA = run_multi_pa_algorithm(iteration=50)
+    mistakes = PA[1]
+    graph_results(
+        x=range(1, 51),
+        y=mistakes,
+        title="Multi-class PA Mistakes",
+        xlabel="Iteration",
+        ylabel="Mistakes",
+        save_path="multi_pa_mistakes.png"
+    )
+    
+    # Run multi-class Perceptron
+    perc = run_perceptron(iteration=50)
+    mistakes = perc[1]
+    graph_results(
+        x=range(1, 51),
+        y=mistakes,
+        title="Multi-class Perceptron Mistakes",
+        xlabel="Iteration",
+        ylabel="Mistakes",
+        save_path="multi_perceptron_mistakes.png"
+    )
 
-#     # Run multi-class Perceptron
-#     perc = run_perceptron(iteration=50)
-#     mistakes = perc[1]
-#     graph_results(
-#         x=range(1, 51),
-#         y=mistakes,
-#         title="Multi-class Perceptron Mistakes",
-#         xlabel="Iteration",
-#         ylabel="Mistakes",
-#         save_path="multi_perceptron_mistakes.png"
-#     )
-
-#     # Run multi-class Passive-Aggressive Algorithm
-#     PA = run_passive_aggressive(iteration=50)
-#     mistakes = PA[1]
-#     graph_results(
-#         x=range(1, 51),
-#         y=mistakes,
-#         title="Multi-class PA Mistakes",
-#         xlabel="Iteration",
-#         ylabel="Mistakes",
-#         save_path="multi_pa_mistakes.png"
-#     )
+  
 
 
 # def plot_multi_algorithm_accuracies() -> None:
@@ -378,7 +380,7 @@ def plot_multi_algorithm_mistakes() -> None:
     # )
 
     # Run multi-class Passive-Aggressive algorithm and plot mistakes
-    PA = run_multi_passive_aggressive(iteration=50)  # Use multi-class PA function
+    PA = run_multi_pa_algorithm(iteration=50)  # Use multi-class PA function
     mistakes = PA[1]
     graph_results(
         x=range(1, 51),
@@ -396,19 +398,19 @@ def plot_multi_algorithm_accuracies() -> None:
     on training and testing datasets.
     """
 
-    # run_and_plot_multi(
-    #     algorithm_name="Multi-class Perceptron",
-    #     update_function=update_multi_weights_perceptron,  # Use multi-class Perceptron update
-    #     num_iterations=20,
-    #     file_prefix="multi_perceptron"
-    # )
-
     run_and_plot_multi(
-        algorithm_name="Multi-class PA",
-        update_function=update_multi_weights_pa,  # Use multi-class PA update
+        algorithm_name="Multi-class Perceptron",
+        update_function=update_multi_weights_perceptron,  # Use multi-class Perceptron update
         num_iterations=20,
-        file_prefix="multi_pa"
+        file_prefix="multi_perceptron"
     )
+
+    # run_and_plot_multi(
+    #     algorithm_name="Multi-class PA",
+    #     update_function=update_multi_weights_pa,  # Use multi-class PA update
+    #     num_iterations=20,
+    #     file_prefix="multi_pa"
+    # )
 
 # Plot multi-class learning curves (Perceptron and PA)
 def plot_multi_learning_curve(algorithm_name: str, increment_function: callable, update_fn: callable, num_iterations: int, size: int, file_prefix: str) -> None:
@@ -442,36 +444,88 @@ def plot_all_multi_learning_curves() -> None:
         file_prefix="multi_perceptron"
     )
 
-    # Plot multi-class Passive-Aggressive learning curve
-    plot_multi_learning_curve(
-        algorithm_name="Multi-class PA",
-        increment_function=multi_increment_run,
-        update_fn=update_multi_weights_pa,  # Use PA update function
-        num_iterations=20,
-        size=100,
-        file_prefix="multi_pa"
+    # # Plot multi-class Passive-Aggressive learning curve
+    # plot_multi_learning_curve(
+    #     algorithm_name="Multi-class PA",
+    #     increment_function=multi_increment_run,
+    #     update_fn=update_multi_weights_pa,  # Use PA update function
+    #     num_iterations=20,
+    #     size=100,
+    #     file_prefix="multi_pa"
+    # )
+    
+ 
+def run_and_plot_multi_pa(num_iterations=20, file_prefix="multi_pa"):
+    results = run_multi_passive_aggressive(iteration=num_iterations, dataset_type='train', num_classes=10)
+    
+    training_accuracy = results[2]
+    testing_accuracy = results[3]
+    
+    graph_results(
+        x=range(1, num_iterations + 1),
+        y=training_accuracy,
+        title=f"Multi-class PA Training Accuracy",
+        xlabel="Iteration",
+        ylabel="Accuracy",
+        save_path=f"{file_prefix}_training_accuracy.png"
     )
+    
+    graph_results(
+        x=range(1, num_iterations + 1),
+        y=testing_accuracy,
+        title=f"Multi-class PA Test Accuracy",
+        xlabel="Iteration",
+        ylabel="Accuracy",
+        save_path=f"{file_prefix}_testing_accuracy.png"
+    )
+
+# Plotting the learning curve for PA
+def plot_multi_learning_curve_pa(num_iterations=20, size=100, file_prefix="multi_pa"):
+    results = multi_increment_run_pa(iteration=num_iterations, size=size, update_fn=update_multi_weights_pa, num_classes=10)
+    
+    data_size = results[1]
+    test_accuracy = results[2]
+    
+    graph_results(
+        x=data_size,
+        y=test_accuracy,
+        title=f"Multi-class PA Learning Curve",
+        xlabel="Number of Training Examples",
+        ylabel="Test Accuracy",
+        save_path=f"{file_prefix}_learning_curve.png"
+    )
+
 
 def main():
     
-    # Run the learning curves for all binary classifiers
-    # print("Running all binary learning curves...")
-    # plot_all_learning_curves()
-    
-    # Run the multi-class algorithm mistakes plots
-    print("Running multi-class algorithm mistakes plots...")
+    print("Running multi-class PA algorithm mistakes plots...")
     plot_multi_algorithm_mistakes()
     
+    print("Running multi-class PA algorithm accuracy plots...")
+    run_and_plot_multi_pa()
     
-    # Run the multi-class algorithm accuracy plots
-    print("Running multi-class algorithm accuracy plots...")
-    plot_multi_algorithm_accuracies()
+    # Running learning curves for PA algorithm
+    print("Running multi-class PA learning curves...")
+    plot_multi_learning_curve_pa()
+
+    # # Run the learning curves for all binary classifiers
+    # # print("Running all binary learning curves...")
+    # # plot_all_learning_curves()
+    
+    # # Run the multi-class algorithm mistakes plots
+    # print("Running multi-class algorithm mistakes plots...")
+    # plot_multi_algorithm_mistakes()
+    
+    
+    # # Run the multi-class algorithm accuracy plots
+    # print("Running multi-class algorithm accuracy plots...")
+    # plot_multi_algorithm_accuracies()
 
    
 
-    # Run the learning curves for all multi-class classifiers
-    print("Running all multi-class learning curves...")
-    plot_all_multi_learning_curves()
+    # # Run the learning curves for all multi-class classifiers
+    # print("Running all multi-class learning curves...")
+    # plot_all_multi_learning_curves()
 
    
 
