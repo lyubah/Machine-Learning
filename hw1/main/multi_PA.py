@@ -112,7 +112,7 @@ def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10, epsil
 
 # Run multi-class Passive-Aggressive Algorithm
 def run_multi_passive_aggressive(iteration, dataset_type="train", num_classes=10):
-    return run_multi_pa_algorithm(iteration, update_multi_weights_pa, dataset_type, num_classes)
+    return run_multi_pa_algorithm(iteration, dataset_type, num_classes)
 
 # Incremental run for Passive-Aggressive algorithm (PA Version)
 def multi_increment_run_pa(iteration, size, update_fn, num_classes=10):

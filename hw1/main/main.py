@@ -498,8 +498,8 @@ def plot_multi_learning_curve_pa(num_iterations=20, size=100, file_prefix="multi
 
 def main():
     
-    print("Running multi-class PA algorithm mistakes plots...")
-    plot_multi_algorithm_mistakes()
+    # print("Running multi-class PA algorithm mistakes plots...")
+    # plot_multi_algorithm_mistakes()
     
     print("Running multi-class PA algorithm accuracy plots...")
     run_and_plot_multi_pa()
