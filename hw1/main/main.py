@@ -497,36 +497,29 @@ def plot_multi_learning_curve_pa(num_iterations=20, size=100, file_prefix="multi
 
 
 def main():
-    
-    # print("Running multi-class PA algorithm mistakes plots...")
-    # plot_multi_algorithm_mistakes()
-    
+    print("Running bin-class  algorithm mistakes plots...")
+    plot_algorithm_mistakes()
+    print("Running multi-class PA algorithm mistakes plots...")
+    plot_multi_algorithm_mistakes()
+    print("Running multi-class algorithm mistakes plots...")
+    plot_multi_algorithm_mistakes()
+    print("Running bin-class PA algorithm accuracy plots...")
+    run_and_plot()
     print("Running multi-class PA algorithm accuracy plots...")
     run_and_plot_multi_pa()
-    
+    # # Run the multi-class algorithm accuracy plots
+    print("Running multi-class algorithm accuracy plots...")
+    plot_multi_algorithm_accuracies()
+    # # Run the learning curves for all multi-class classifiers
+    print("Running all multi-class learning curves...")
+    plot_all_multi_learning_curves()
     # Running learning curves for PA algorithm
     print("Running multi-class PA learning curves...")
     plot_multi_learning_curve_pa()
-
     # # Run the learning curves for all binary classifiers
-    # # print("Running all binary learning curves...")
-    # # plot_all_learning_curves()
+    print("Running all binary learning curves...")
+    plot_all_learning_curves()
     
-    # # Run the multi-class algorithm mistakes plots
-    # print("Running multi-class algorithm mistakes plots...")
-    # plot_multi_algorithm_mistakes()
-    
-    
-    # # Run the multi-class algorithm accuracy plots
-    # print("Running multi-class algorithm accuracy plots...")
-    # plot_multi_algorithm_accuracies()
-
-   
-
-    # # Run the learning curves for all multi-class classifiers
-    # print("Running all multi-class learning curves...")
-    # plot_all_multi_learning_curves()
-
    
 
 if __name__ == "__main__":

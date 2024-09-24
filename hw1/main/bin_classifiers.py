@@ -119,15 +119,7 @@ def run_algorithm(iteration, update_fn, dataset_type="train", use_averaging=Fals
 #     return weights, data_size, test_accuracy_list
 
 def increment_run(iteration, update_fn, size, use_averaging=False):
-    """
-    Run the algorithm incrementally, saving performance every `size` samples.
     
-    :param iteration: Number of iterations
-    :param update_fn: Function to update the weights
-    :param size: Size of incremental steps
-    :param use_averaging: Boolean flag for using Averaged Perceptron.
-    :return: (weights, data_size, test_accuracy_list)
-    """
     x_train, y_train = load_data("train")
     weights = np.zeros(x_train.shape[1])
 

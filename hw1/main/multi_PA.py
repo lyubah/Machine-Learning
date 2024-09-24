@@ -75,18 +75,6 @@ def run_multi_pa_algorithm(iteration, dataset_type="train", num_classes=10):
 
 # Update weights for Passive-Aggressive Algorithm (PA Version)
 def update_multi_weights_pa(weight_vector, xt, yt, y_pred, num_classes=10, epsilon=1e-8, max_learning_rate=10.0):
-    """
-    Update function for the Passive-Aggressive algorithm with safe learning rate handling.
-    
-    :param weight_vector: Current weight vector
-    :param xt: Input sample
-    :param yt: True label
-    :param y_pred: Predicted label
-    :param num_classes: Number of classes
-    :param epsilon: Small value to prevent division by zero
-    :param max_learning_rate: Maximum allowable learning rate to avoid instability
-    :return: Updated weight vector
-    """
     
     # Calculate weight difference vectors
     diff_vector_yt = get_weight_vector_multi_pa(xt, yt, num_classes)
