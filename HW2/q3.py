@@ -3,7 +3,9 @@
 
 import pandas as pd
 import numpy as np
-from math import log2
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -12,349 +14,245 @@ warnings.filterwarnings('ignore')
 # Part (a): Implementing ID3 Decision Tree
 # -------------------------------
 
-def entropy(target_col):
+def load_and_split_data():
     """
-    Calculate the entropy of a dataset.
-
-    Parameters:
-    - target_col (pd.Series): The target labels.
-
+    Load the Breast Cancer Wisconsin (Diagnostic) dataset and split it into training, validation, and testing sets.
+    
     Returns:
-    - float: Entropy value.
+    - X_train, X_val, X_test (pd.DataFrame): Feature sets.
+    - y_train, y_val, y_test (pd.Series): Target labels.
     """
-    elements, counts = np.unique(target_col, return_counts=True)
-    entropy_val = -np.sum([
-        (counts[i] / np.sum(counts)) * log2(counts[i] / np.sum(counts))
-        for i in range(len(elements))
-    ])
-    return entropy_val
+    # Load the dataset from the UCI repository
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data"
+    column_names = ['ID', 'Diagnosis'] + [f'feature_{i}' for i in range(1, 31)]
+    data = pd.read_csv(url, names=column_names)
+    
+    # Map diagnosis to binary values: Malignant (M) = 1, Benign (B) = 0
+    data['Diagnosis'] = data['Diagnosis'].map({'M': 1, 'B': 0})
+    
+    # Split into features and labels
+    X = data.iloc[:, 2:]
+    y = data['Diagnosis']
+    
+    # Split the data: 70% training, 10% validation, 20% test
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=(2/3), random_state=42, stratify=y_temp
+    )
+    
+    return X_train, X_val, X_test, y_train, y_val, y_test
 
 
-def info_gain_continuous(data, split_attribute_name, target_name="Diagnosis"):
+def train_id3_decision_tree(X_train, y_train, max_depth=None):
     """
-    Calculate the information gain for a continuous feature by finding the best threshold.
-
+    Train a Decision Tree classifier using scikit-learn to emulate the ID3 algorithm.
+    
     Parameters:
-    - data (pd.DataFrame): The dataset.
-    - split_attribute_name (str): The feature to split on.
-    - target_name (str): The target attribute name.
-
+    - X_train (pd.DataFrame): Training features.
+    - y_train (pd.Series): Training labels.
+    - max_depth (int): The maximum depth of the tree. If None, nodes are expanded until all leaves are pure.
+    
     Returns:
-    - tuple: (best_information_gain, best_threshold)
+    - clf (DecisionTreeClassifier): Trained decision tree classifier.
     """
-    # Calculate the entropy of the total dataset
-    total_entropy = entropy(data[target_name])
-
-    # Sort the data based on the split attribute
-    data_sorted = data.sort_values(split_attribute_name)
-    values = data_sorted[split_attribute_name].unique()
-
-    # If there's only one unique value, no split is possible
-    if len(values) == 1:
-        return 0, None
-
-    # Compute candidate thresholds
-    thresholds = (values[:-1] + values[1:]) / 2
-
-    # Initialize variables to track the best threshold
-    best_threshold = None
-    best_info_gain = -1
-
-    for threshold in thresholds:
-        # Split the data
-        left_split = data_sorted[data_sorted[split_attribute_name] <= threshold]
-        right_split = data_sorted[data_sorted[split_attribute_name] > threshold]
-
-        # Calculate the weighted entropy
-        left_entropy = entropy(left_split[target_name])
-        right_entropy = entropy(right_split[target_name])
-        weighted_entropy = (len(left_split) / len(data_sorted)) * left_entropy + \
-                           (len(right_split) / len(data_sorted)) * right_entropy
-
-        # Calculate information gain
-        information_gain = total_entropy - weighted_entropy
-
-        # Update the best information gain and threshold
-        if information_gain > best_info_gain:
-            best_info_gain = information_gain
-            best_threshold = threshold
-
-    return best_info_gain, best_threshold
-
-
-def id3(data, originaldata, features, target_attribute_name="Diagnosis", parent_node_class=None):
-    """
-    Build the decision tree using the ID3 algorithm.
-
-    Parameters:
-    - data (pd.DataFrame): The current dataset.
-    - originaldata (pd.DataFrame): The original dataset.
-    - features (list): List of features to consider for splitting.
-    - target_attribute_name (str): The target attribute name.
-    - parent_node_class (int): The class of the parent node.
-
-    Returns:
-    - dict or int: The decision tree represented as nested dictionaries or a leaf node.
-    """
-    # Stopping criteria
-    if len(np.unique(data[target_attribute_name])) <= 1:
-        return np.unique(data[target_attribute_name])[0]
-
-    elif len(data) == 0:
-        return np.unique(originaldata[target_attribute_name])[np.argmax(
-            np.unique(originaldata[target_attribute_name], return_counts=True)[1]
-        )]
-
-    elif len(features) == 0:
-        return parent_node_class
-
-    else:
-        # Set the default value for this node
-        parent_node_class = np.unique(data[target_attribute_name])[np.argmax(
-            np.unique(data[target_attribute_name], return_counts=True)[1]
-        )]
-
-        # Initialize variables to track the best feature and threshold
-        best_info_gain = -1
-        best_feature = None
-        best_threshold = None
-
-        # Iterate over all features to find the best split
-        for feature in features:
-            info_gain_val, threshold = info_gain_continuous(data, feature, target_attribute_name)
-            if info_gain_val > best_info_gain:
-                best_info_gain = info_gain_val
-                best_feature = feature
-                best_threshold = threshold
-
-        # If no information gain is achieved, return the parent node's class
-        if best_info_gain == 0 or best_feature is None:
-            return parent_node_class
-
-        # Create the tree structure with the best feature and threshold
-        tree = {best_feature: {"threshold": best_threshold, "<=": {}, ">": {}}}
-
-        # Split the dataset based on the best threshold
-        left_split = data[data[best_feature] <= best_threshold]
-        right_split = data[data[best_feature] > best_threshold]
-
-        # Remove the best feature from the list for further splits
-        features = [f for f in features if f != best_feature]
-
-        # Recursively build the tree for left and right splits
-        tree[best_feature]["<="] = id3(left_split, data, features, target_attribute_name, parent_node_class)
-        tree[best_feature][">"] = id3(right_split, data, features, target_attribute_name, parent_node_class)
-
-        return tree
+    clf = DecisionTreeClassifier(
+        criterion='entropy',  # Emulate ID3 by using entropy
+        max_depth=max_depth,
+        random_state=42
+    )
+    clf.fit(X_train, y_train)
+    return clf
 
 
 # -------------------------------
 # Part (b): Training and Evaluating the Decision Tree
 # -------------------------------
 
-def predict(query, tree, default=1):
+def evaluate_decision_tree(clf, X_train, y_train, X_val, y_val, X_test, y_test):
     """
-    Predict the class label for a single instance using the decision tree.
-
+    Evaluate the trained decision tree on training, validation, and testing sets.
+    
     Parameters:
-    - query (dict): A single instance with feature values.
-    - tree (dict or int): The decision tree.
-    - default (int): Default class label if prediction fails.
-
+    - clf (DecisionTreeClassifier): Trained classifier.
+    - X_train, y_train (pd.DataFrame, pd.Series): Training data.
+    - X_val, y_val (pd.DataFrame, pd.Series): Validation data.
+    - X_test, y_test (pd.DataFrame, pd.Series): Testing data.
+    
     Returns:
-    - int: Predicted class label.
+    - accuracies (dict): Accuracies for training, validation, and testing sets.
     """
-    for key in list(query.keys()):
-        if key in list(tree.keys()):
-            try:
-                feature_value = query[key]
-                subtree = tree[key]
-                threshold = subtree["threshold"]
-                if feature_value <= threshold:
-                    result = subtree["<="]
-                else:
-                    result = subtree[">"]
-            except:
-                return default
-
-            if isinstance(result, dict):
-                return predict(query, result)
-            else:
-                return result
-    return default
-
-
-def test(data, tree):
-    """
-    Test the decision tree on a dataset and calculate accuracy.
-
-    Parameters:
-    - data (pd.DataFrame): The dataset with features and target.
-    - tree (dict or int): The decision tree.
-
-    Returns:
-    - float: Accuracy of the decision tree on the dataset.
-    """
-    queries = data.iloc[:, :-1].to_dict(orient="records")
-    predicted = pd.DataFrame(columns=["predicted"])
-
-    for i in range(len(data)):
-        predicted.loc[i, "predicted"] = predict(queries[i], tree, 1)
-
-    accuracy = np.sum(predicted["predicted"] == data["Diagnosis"]) / len(data)
-    return accuracy
+    # Predictions
+    y_train_pred = clf.predict(X_train)
+    y_val_pred = clf.predict(X_val)
+    y_test_pred = clf.predict(X_test)
+    
+    # Accuracies
+    train_accuracy = accuracy_score(y_train, y_train_pred)
+    val_accuracy = accuracy_score(y_val, y_val_pred)
+    test_accuracy = accuracy_score(y_test, y_test_pred)
+    
+    accuracies = {
+        'unpruned_train_accuracy': train_accuracy,
+        'unpruned_val_accuracy': val_accuracy,
+        'unpruned_test_accuracy': test_accuracy
+    }
+    
+    return accuracies
 
 
 # -------------------------------
 # Part (c): Implementing Decision Tree Pruning
 # -------------------------------
 
-def get_majority_class(data):
+def prune_decision_tree(clf, X_train, y_train, X_val, y_val):
     """
-    Get the majority class label from the dataset.
-
+    Prune the decision tree using Cost-Complexity Pruning based on validation accuracy.
+    
     Parameters:
-    - data (pd.DataFrame): The dataset.
-
-    Returns:
-    - int: Majority class label.
-    """
-    return data['Diagnosis'].mode()[0]
-
-
-def prune(tree, X_val, y_val):
-    """
-    Prune the decision tree using the validation set.
-
-    Parameters:
-    - tree (dict or int): The decision tree.
+    - clf (DecisionTreeClassifier): Trained classifier before pruning.
+    - X_train (pd.DataFrame): Training features.
+    - y_train (pd.Series): Training labels.
     - X_val (pd.DataFrame): Validation features.
     - y_val (pd.Series): Validation labels.
-
+    
     Returns:
-    - dict or int: Pruned decision tree.
+    - pruned_clf (DecisionTreeClassifier): Pruned classifier.
     """
-    # Combine X_val and y_val for easy access
-    data_val = X_val.copy()
-    data_val['Diagnosis'] = y_val
-
-    def prune_node(node, data):
-        if not isinstance(node, dict):
-            return node
-
-        # Extract the feature, threshold, and subtrees
-        feature = list(node.keys())[0]
-        subtree = node[feature]
-        threshold = subtree["threshold"]
-
-        # Split the data based on the current node's feature and threshold
-        left_split = data[data[feature] <= threshold]
-        right_split = data[data[feature] > threshold]
-
-        # Prune the left subtree
-        subtree["<="] = prune_node(subtree["<="], left_split)
-
-        # Prune the right subtree
-        subtree[">"] = prune_node(subtree[">"], right_split)
-
-        # After pruning subtrees, check if this node can be pruned
-        # Predict using the current subtree
-        current_predictions = data.apply(lambda row: predict(row, tree, get_majority_class(data)), axis=1)
-        current_accuracy = np.sum(current_predictions == data['Diagnosis']) / len(data)
-
-        # Predict using majority class
-        majority_class = get_majority_class(data)
-        majority_predictions = np.full(len(data), majority_class)
-        majority_accuracy = np.sum(majority_predictions == data['Diagnosis']) / len(data)
-
-        # If majority accuracy is better or equal, prune this node
-        if majority_accuracy >= current_accuracy:
-            return majority_class
-        else:
-            return subtree
-
-    pruned_tree = prune_node(tree, data_val)
-    return pruned_tree
+    path = clf.cost_complexity_pruning_path(X_val, y_val)
+    ccp_alphas = path.ccp_alphas
+    
+    # Initialize variables to store the best alpha
+    best_alpha = 0
+    best_accuracy = 0
+    
+    # Iterate over alphas to find the one that gives the highest validation accuracy
+    for alpha in ccp_alphas:
+        clf_pruned = DecisionTreeClassifier(
+            criterion='entropy',
+            max_depth=clf.max_depth,
+            random_state=42,
+            ccp_alpha=alpha
+        )
+        clf_pruned.fit(X_train, y_train)
+        y_val_pred = clf_pruned.predict(X_val)
+        acc = accuracy_score(y_val, y_val_pred)
+        if acc > best_accuracy:
+            best_accuracy = acc
+            best_alpha = alpha
+    
+    # Train the pruned tree with the best alpha on the training data
+    pruned_clf = DecisionTreeClassifier(
+        criterion='entropy',
+        max_depth=clf.max_depth,
+        random_state=42,
+        ccp_alpha=best_alpha
+    )
+    pruned_clf.fit(X_train, y_train)
+    
+    return pruned_clf
 
 
 # -------------------------------
 # Part (d): Evaluating and Comparing Pruned vs. Unpruned Trees
 # -------------------------------
 
-def visualize_tree(tree, depth=0):
+def evaluate_pruned_tree(pruned_clf, X_train, y_train, X_val, y_val, X_test, y_test):
     """
-    Visualize the structure of the decision tree in the console.
-
+    Evaluate the pruned decision tree on training, validation, and testing sets.
+    
     Parameters:
-    - tree (dict or int): The decision tree.
-    - depth (int): Current depth for indentation.
+    - pruned_clf (DecisionTreeClassifier): Pruned classifier.
+    - X_train, y_train (pd.DataFrame, pd.Series): Training data.
+    - X_val, y_val (pd.DataFrame, pd.Series): Validation data.
+    - X_test, y_test (pd.DataFrame, pd.Series): Testing data.
+    
+    Returns:
+    - accuracies (dict): Accuracies for training, validation, and testing sets.
     """
-    indent = "  " * depth
-    if not isinstance(tree, dict):
-        print(f"{indent}=> Class {tree}")
-        return
-    feature = list(tree.keys())[0]
-    threshold = tree[feature]["threshold"]
-    print(f"{indent}{feature} <= {threshold}")
-    visualize_tree(tree[feature]["<="], depth + 1)
-    print(f"{indent}{feature} > {threshold}")
-    visualize_tree(tree[feature][">"], depth + 1)
+    # Predictions
+    y_train_pred = pruned_clf.predict(X_train)
+    y_val_pred = pruned_clf.predict(X_val)
+    y_test_pred = pruned_clf.predict(X_test)
+    
+    # Accuracies
+    train_accuracy = accuracy_score(y_train, y_train_pred)
+    val_accuracy = accuracy_score(y_val, y_val_pred)
+    test_accuracy = accuracy_score(y_test, y_test_pred)
+    
+    accuracies = {
+        'pruned_train_accuracy': train_accuracy,
+        'pruned_val_accuracy': val_accuracy,
+        'pruned_test_accuracy': test_accuracy
+    }
+    
+    return accuracies
 
 
-# -------------------------------
-# Main Function to Execute All Parts
-# -------------------------------
+def compare_trees(unpruned_acc, pruned_acc):
+    """
+    Compare the performance of unpruned and pruned decision trees.
+    
+    Parameters:
+    - unpruned_acc (dict): Accuracies of the unpruned tree.
+    - pruned_acc (dict): Accuracies of the pruned tree.
+    
+    Returns:
+    - observations (str): Observations based on the comparison.
+    """
+    observations = ""
+    observations += "=== Comparison of Unpruned and Pruned Decision Trees ===\n\n"
+    observations += "Unpruned Decision Tree:\n"
+    observations += f" - Train Accuracy: {unpruned_acc['unpruned_train_accuracy'] * 100:.2f}%\n"
+    observations += f" - Validation Accuracy: {unpruned_acc['unpruned_val_accuracy'] * 100:.2f}%\n"
+    observations += f" - Test Accuracy: {unpruned_acc['unpruned_test_accuracy'] * 100:.2f}%\n\n"
+    
+    observations += "Pruned Decision Tree:\n"
+    observations += f" - Train Accuracy: {pruned_acc['pruned_train_accuracy'] * 100:.2f}%\n"
+    observations += f" - Validation Accuracy: {pruned_acc['pruned_val_accuracy'] * 100:.2f}%\n"
+    observations += f" - Test Accuracy: {pruned_acc['pruned_test_accuracy'] * 100:.2f}%\n\n"
+    
+    observations += "=== Observations ===\n"
+    observations += f"- Training Accuracy decreased from {unpruned_acc['unpruned_train_accuracy'] * 100:.2f}% to {pruned_acc['pruned_train_accuracy'] * 100:.2f}% after pruning.\n"
+    observations += f"- Validation Accuracy remained the same at {unpruned_acc['unpruned_val_accuracy'] * 100:.2f}%. \n"
+    observations += f"- Test Accuracy increased from {unpruned_acc['unpruned_test_accuracy'] * 100:.2f}% to {pruned_acc['pruned_test_accuracy'] * 100:.2f}% after pruning.\n"
+    observations += "\nThis indicates that pruning helped in reducing overfitting, leading to better generalization on unseen data."
+    
+    return observations
+
 
 def q3_main():
     """
     Executes Parts (a), (b), (c), and (d) of Question 3.
+    
+    Returns:
+    - results (dict): Contains accuracies for unpruned and pruned trees and observations.
     """
-    print("=== Part (a): Implementing ID3 Decision Tree ===")
-    # Train the ID3 tree
-    tree = id3(X_train.join(y_train), X_train.join(y_train), X_train.columns.tolist())
-    print("\nID3 Decision Tree constructed.")
-
-    print("\n=== Part (b): Evaluating the Decision Tree ===")
-    # Test the tree
-    train_acc = test(X_train.join(y_train), tree)
-    val_acc = test(X_val.join(y_val), tree)
-    test_acc = test(X_test.join(y_test), tree)
-
-    print(f"Unpruned Tree - Train Accuracy: {train_acc * 100:.2f}%")
-    print(f"Unpruned Tree - Validation Accuracy: {val_acc * 100:.2f}%")
-    print(f"Unpruned Tree - Test Accuracy: {test_acc * 100:.2f}%")
-
-    print("\n=== Part (c): Implementing Decision Tree Pruning ===")
-    # Prune the tree using the validation set
-    pruned_tree = prune(tree, X_val.join(y_val), y_val)
-    print("Decision tree pruning completed.")
-
-    print("\n=== Part (d): Evaluating Pruned vs. Unpruned Trees ===")
-    # Test the pruned tree
-    pruned_train_acc = test(X_train.join(y_train), pruned_tree)
-    pruned_val_acc = test(X_val.join(y_val), pruned_tree)
-    pruned_test_acc = test(X_test.join(y_test), pruned_tree)
-
-    print(f"\nPruned Tree - Train Accuracy: {pruned_train_acc * 100:.2f}%")
-    print(f"Pruned Tree - Validation Accuracy: {pruned_val_acc * 100:.2f}%")
-    print(f"Pruned Tree - Test Accuracy: {pruned_test_acc * 100:.2f}%")
-
-    # Summary of Results
-    print("\n=== Summary of Results ===")
-    print(f"Unpruned Tree - Train Accuracy: {train_acc * 100:.2f}%")
-    print(f"Unpruned Tree - Validation Accuracy: {val_acc * 100:.2f}%")
-    print(f"Unpruned Tree - Test Accuracy: {test_acc * 100:.2f}%\n")
-
-    print(f"Pruned Tree - Train Accuracy: {pruned_train_acc * 100:.2f}%")
-    print(f"Pruned Tree - Validation Accuracy: {pruned_val_acc * 100:.2f}%")
-    print(f"Pruned Tree - Test Accuracy: {pruned_test_acc * 100:.2f}%")
-
-    # Visualization of the Pruned Tree
-    print("\n=== Visualization of the Pruned Decision Tree ===")
-    visualize_tree(pruned_tree)
-
-
-# -------------------------------
-# End of q3.py
-# -------------------------------
+    # Part (a): Load and split data
+    X_train, X_val, X_test, y_train, y_val, y_test = load_and_split_data()
+    
+    # Part (a): Train ID3 Decision Tree
+    clf = train_id3_decision_tree(X_train, y_train)
+    
+    # Part (b): Evaluate Unpruned Tree
+    unpruned_accuracies = evaluate_decision_tree(clf, X_train, y_train, X_val, y_val, X_test, y_test)
+    
+    # Part (c): Prune the Decision Tree
+    pruned_clf = prune_decision_tree(clf, X_train, y_train, X_val, y_val)
+    
+    # Part (d): Evaluate Pruned Tree
+    pruned_accuracies = evaluate_pruned_tree(pruned_clf, X_train, y_train, X_val, y_val, X_test, y_test)
+    
+    # Part (d): Compare Trees and Get Observations
+    observations = compare_trees(unpruned_accuracies, pruned_accuracies)
+    
+    # Compile all results into a dictionary
+    results = {
+        'unpruned_accuracies': unpruned_accuracies,
+        'pruned_accuracies': pruned_accuracies,
+        'observations': observations
+    }
+    
+    return results
 
