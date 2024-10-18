@@ -1,29 +1,33 @@
+# q1.py
 # -*- coding: utf-8 -*-
 
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import svm
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
 from tensorflow.keras.datasets import fashion_mnist
 import warnings
 import os
-import seaborn as sns
-import matplotlib.pyplot as plt
-import os
-from sklearn.metrics import confusion_matrix
-
-
 
 # Suppress warnings for cleaner output
 warnings.filterwarnings('ignore')
 
+
 def load_and_split_data(test_size=0.2, validation_size=0.2, random_state=42):
     """
     Loads the Fashion MNIST dataset and splits it into training, validation, and testing sets.
+
+    Parameters:
+    - test_size (float): Proportion of the dataset to include in the test split.
+    - validation_size (float): Proportion of the training dataset to include in the validation split.
+    - random_state (int): Seed used by the random number generator.
+
+    Returns:
+    - X_train, X_val, X_test (np.ndarray): Split datasets.
+    - y_train, y_val, y_test (np.ndarray): Corresponding labels.
     """
     print("Loading Fashion MNIST data...")
     (X_train_full, y_train_full), (X_test, y_test) = fashion_mnist.load_data()
@@ -45,9 +49,16 @@ def load_and_split_data(test_size=0.2, validation_size=0.2, random_state=42):
     
     return X_train, X_val, X_test, y_train, y_val, y_test
 
+
 def preprocess_data(X_train, X_val, X_test):
     """
-    Flattens and scales the data.
+    Flattens and scales the data using StandardScaler.
+
+    Parameters:
+    - X_train, X_val, X_test (np.ndarray): Split datasets.
+
+    Returns:
+    - X_train_scaled, X_val_scaled, X_test_scaled (np.ndarray): Preprocessed datasets.
     """
     print("Preprocessing data...")
     # Flatten the images
@@ -59,18 +70,30 @@ def preprocess_data(X_train, X_val, X_test):
     scaler = StandardScaler()
     
     # Fit on training data and transform
-    X_train = scaler.fit_transform(X_train)
+    X_train_scaled = scaler.fit_transform(X_train)
     
     # Transform validation and test data
-    X_val = scaler.transform(X_val)
-    X_test = scaler.transform(X_test)
+    X_val_scaled = scaler.transform(X_val)
+    X_test_scaled = scaler.transform(X_test)
     
-    return X_train, X_val, X_test
+    return X_train_scaled, X_val_scaled, X_test_scaled
 
 
 def train_svm_linear(X_train, y_train, C_values, X_val, y_val, X_test, y_test):
     """
     Trains linear SVMs with different C values and records accuracies and support vectors.
+
+    Parameters:
+    - X_train, y_train (np.ndarray): Training data and labels.
+    - C_values (list): List of C values to iterate over.
+    - X_val, y_val (np.ndarray): Validation data and labels.
+    - X_test, y_test (np.ndarray): Testing data and labels.
+
+    Returns:
+    - training_accuracies (list): Accuracies on the training set.
+    - validation_accuracies (list): Accuracies on the validation set.
+    - testing_accuracies (list): Accuracies on the testing set.
+    - num_support_vectors (list): Number of support vectors for each C.
     """
     training_accuracies = []
     validation_accuracies = []
@@ -78,8 +101,8 @@ def train_svm_linear(X_train, y_train, C_values, X_val, y_val, X_test, y_test):
     num_support_vectors = []
     
     for C in C_values:
-        print(f"Training SVM with C={C}...")
-        clf = svm.SVC(kernel='linear', C=C, random_state=12, max_iter=10000, tol=1e-4, verbose=True) # I added tol because it was not converging
+        print(f"\nTraining SVM with C={C}...")
+        clf = svm.SVC(kernel='linear', C=C, random_state=12, max_iter=10000, tol=1e-3, verbose=False)
         
         clf.fit(X_train, y_train)
         
@@ -105,39 +128,50 @@ def train_svm_linear(X_train, y_train, C_values, X_val, y_val, X_test, y_test):
     return training_accuracies, validation_accuracies, testing_accuracies, num_support_vectors
 
 
-
 def plot_accuracies(C_values, training_accuracies, validation_accuracies, testing_accuracies):
     """
     Plots training, validation, and testing accuracies as a function of C.
+
+    Parameters:
+    - C_values (list): List of C values.
+    - training_accuracies (list): Training accuracies.
+    - validation_accuracies (list): Validation accuracies.
+    - testing_accuracies (list): Testing accuracies.
     """
     plt.figure(figsize=(10, 6))
     sns.set(style="whitegrid")
     
-    plt.plot(C_values, training_accuracies, marker='o', label='training Accuracy')
-    plt.plot(C_values, validation_accuracies, marker='s', label='validation Accuracy')
-    plt.plot(C_values, testing_accuracies, marker='^', label='testing Accuracy')
+    plt.plot(C_values, training_accuracies, marker='o', label='Training Accuracy')
+    plt.plot(C_values, validation_accuracies, marker='s', label='Validation Accuracy')
+    plt.plot(C_values, testing_accuracies, marker='^', label='Testing Accuracy')
     
     plt.xscale('log')
     plt.xlabel('C Value (log scale)')
     plt.ylabel('Accuracy')
     plt.title('SVM Accuracy vs C Value (Linear Kernel)')
     plt.legend()
-
+    
     plt.savefig(os.path.join(os.getcwd(), 'SVM_Accuracy_vs_C_Value_1.png'))
     plt.show()
+
 
 def plot_support_vectors(C_values, num_support_vectors):
     """
     Plots the number of support vectors as a function of C.
+
+    Parameters:
+    - C_values (list): List of C values.
+    - num_support_vectors (list): Number of support vectors for each C.
     """
     plt.figure(figsize=(10, 6))
     sns.set(style="whitegrid")
     
-    plt.plot(C_values, num_support_vectors, marker='D', color='purple')
+    plt.plot(C_values, num_support_vectors, marker='D', color='purple', label='Support Vectors')
     plt.xscale('log')
     plt.xlabel('C Value (log scale)')
     plt.ylabel('Number of Support Vectors')
     plt.title('Number of Support Vectors vs C Value (Linear Kernel)')
+    plt.legend()
     
     plt.savefig(os.path.join(os.getcwd(), 'Support_Vectors_vs_C_Value_1.png'))
     plt.show()
@@ -146,6 +180,11 @@ def plot_support_vectors(C_values, num_support_vectors):
 def plot_confusion_matrix(conf_matrix, labels, filename='confusion_matrix.pdf'):
     """
     Plots and saves the confusion matrix as a PDF file.
+
+    Parameters:
+    - conf_matrix (np.ndarray): Confusion matrix.
+    - labels (list): List of class labels.
+    - filename (str): Filename for the saved plot.
     """
     plt.figure(figsize=(10, 8))
     sns.set(style="whitegrid")
@@ -160,14 +199,28 @@ def plot_confusion_matrix(conf_matrix, labels, filename='confusion_matrix.pdf'):
     plt.show()
 
 
-# Ensure main function and others are unchanged
 def one_b(X_train, X_val, y_train, y_val, X_test, y_test, C_best):
+    """
+    Retrains the SVM with the best C on the combined training and validation sets.
+    Evaluates on the test set and returns test accuracy and confusion matrix.
+
+    Parameters:
+    - X_train, y_train (np.ndarray): Training data and labels.
+    - X_val, y_val (np.ndarray): Validation data and labels.
+    - X_test, y_test (np.ndarray): Testing data and labels.
+    - C_best (float): Best C value from Part 1(a).
+
+    Returns:
+    - accuracy_test (float): Testing accuracy.
+    - conf_matrix (np.ndarray): Confusion matrix on the test set.
+    """
     # Combine the training and validation sets
     X_train_combined = np.vstack((X_train, X_val))
     y_train_combined = np.hstack((y_train, y_val))
 
     # Train the SVM with the best C on the combined data
-    svm_best = svm.SVC(kernel='linear', C=C_best)
+    print(f"\nTraining final SVM with C={C_best} on combined training and validation sets...")
+    svm_best = svm.SVC(kernel='linear', C=C_best, random_state=12, max_iter=10000, tol=1e-3, verbose=False)
     svm_best.fit(X_train_combined, y_train_combined)
 
     # Evaluate on the test set
@@ -177,55 +230,70 @@ def one_b(X_train, X_val, y_train, y_val, X_test, y_test, C_best):
     # Confusion matrix
     conf_matrix = confusion_matrix(y_test, y_test_pred)
 
-    print(f"Testing Accuracy: {accuracy_test}")
+    # Number of support vectors
+    total_sv = svm_best.n_support_.sum()
+
+    print(f"Testing Accuracy: {accuracy_test:.4f}")
+    print(f"Number of Support Vectors: {total_sv}")
     print("Confusion Matrix (10x10):\n", conf_matrix)
 
     return accuracy_test, conf_matrix
 
 
-
-
-
 def q1_main():
-    
+    """
+    Executes Part 1(a) and Part 1(b) of the assignment.
+    Returns the best C value, test accuracy, confusion matrix, and data splits.
+
+    Returns:
+    - C_best (float): Best C value based on validation accuracy.
+    - accuracy_test (float): Testing accuracy from Part 1(b).
+    - conf_matrix (np.ndarray): Confusion matrix from Part 1(b).
+    - X_train, X_val, X_test (np.ndarray): Preprocessed data splits.
+    - y_train, y_val, y_test (np.ndarray): Corresponding labels.
+    """
     C_values = [1e-4, 1e-3, 1e-2, 1e-1, 1, 10, 100, 1000, 10000]
     
+    # Load and split data
     X_train, X_val, X_test, y_train, y_val, y_test = load_and_split_data()
     
+    # Preprocess data
     X_train, X_val, X_test = preprocess_data(X_train, X_val, X_test)
     
+    # Train linear SVMs with different C values
     training_accuracies, validation_accuracies, testing_accuracies, num_support_vectors = train_svm_linear(
         X_train, y_train, C_values, X_val, y_val, X_test, y_test
     )
     
-    C_best_index = validation_accuracies.index(max(validation_accuracies))  
-    C_best = C_values[C_best_index]  
-    best_n_support_linear = num_support_vectors[C_best_index]   
+    # Identify the best C based on validation accuracy
+    max_val_acc = max(validation_accuracies)
+    best_C_indices = [i for i, acc in enumerate(validation_accuracies) if acc == max_val_acc]
+    best_C_candidates = [C_values[i] for i in best_C_indices]
+    C_best = min(best_C_candidates)  # Choose the smallest C among candidates
+    best_n_support_linear = num_support_vectors[C_values.index(C_best)]
     
     # Print the results
+    print("\n=== Part 1(a) Results ===")
     print("Best validation C:", C_best)
     print("Number of support vectors for best C:", best_n_support_linear)
     
-    ############################################
-    """
-    The results:
-    Best validation C: 0.01
-    Number of support vectors for best C: 12250
-
-    """
-    ################################
-    
+    # Plot accuracies and support vectors
     plot_accuracies(C_values, training_accuracies, validation_accuracies, testing_accuracies)
     plot_support_vectors(C_values, num_support_vectors)
     
+    # Part 1(b): Retrain with best C and evaluate on test set
+    print("\n=== Part 1(b) Results ===")
     accuracy_test, conf_matrix = one_b(X_train, X_val, y_train, y_val, X_test, y_test, C_best)
-    # Define the labels (if it's Fashion MNIST, for example, you can use class names)
-    labels = [str(i) for i in range(10)]  # Labels for Fashion MNIST (0-9)
+    
+    # Define the labels (0-9 for Fashion MNIST)
+    labels = [str(i) for i in range(10)]
     
     # Plot and save the confusion matrix as PDF
     plot_confusion_matrix(conf_matrix, labels, filename='confusion_matrix.pdf')
-
     
+    return C_best, accuracy_test, conf_matrix, X_train, X_val, X_test, y_train, y_val, y_test
+
 
 if __name__ == "__main__":
-    q1_main()
+    # Execute Part 1(a) and Part 1(b)
+    C_best, accuracy_test, conf_matrix, X_train, X_val, X_test, y_train, y_val, y_test = q1_main()
